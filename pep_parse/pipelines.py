@@ -5,13 +5,14 @@ from pathlib import Path
 from scrapy.exceptions import DropItem
 
 BASE_DIR = Path(__file__).parent.parent
+RESULTS_DIR = Path('results')
 DT_FORMAT = '%Y-%m-%d_%H-%M-%S'
 FILE_NAME = 'status_summary_{}.csv'
 
 
 class PepParsePipeline:
     def __init__(self):
-        self.results_dir = BASE_DIR / 'results'
+        self.results_dir = BASE_DIR / RESULTS_DIR
         self.results_dir.mkdir(exist_ok=True)
 
     def open_spider(self, spider):
@@ -25,14 +26,10 @@ class PepParsePipeline:
 
     def process_item(self, item, spider):
         if 'status' in item:
-            if item['status'] in self.results:
-                self.results[item['status']] += 1
-                return item
-            else:
-                self.results[item['status']] = 1
-                return item
-        else:
-            raise DropItem('Статус PEP не обнаружен.')
+            self.results[item['status']] = self.results.get(
+                item['status'], 0) + 1
+            return item
+        raise DropItem('Статус PEP не обнаружен.')
 
     def close_spider(self, spider):
         self.file.writerow(['Статус', 'Количество'])
